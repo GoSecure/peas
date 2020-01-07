@@ -18,6 +18,7 @@
 ########################################################################\
 
 import ssl
+import base64
 
 # https://docs.python.org/2/library/xml.html#xml-vulnerabilities
 from lxml import etree as ElementTree
@@ -296,5 +297,8 @@ def get_unc_file(creds, unc_path, username=None, password=None):
 
     # Parse response.
     op, _, path, info, _ = responses[0]
-    data = info['Data'].decode('base64')
-    return data
+
+    if info and info['Data']:
+        return base64.b64decode(info['Data'])
+    else:
+        return '[*] Unable to fetch file.'
