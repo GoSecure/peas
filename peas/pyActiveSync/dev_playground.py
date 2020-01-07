@@ -1,16 +1,16 @@
 ########################################################################
 # Copyright (C) 2013 Sol Birnbaum
-# 
+#
 # This program is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
 #  as published by the Free Software Foundation; either version 2
 #  of the License, or (at your option) any later version.
-# 
+#
 #  This program is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
-# 
+#
 #  You should have received a copy of the GNU General Public License
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
@@ -22,21 +22,21 @@
 import sys, time
 import ssl
 
-from utils.as_code_pages import as_code_pages
-from utils.wbxml import wbxml_parser
-from utils.wapxml import wapxmltree, wapxmlnode
-from client.storage import storage
+from .utils.as_code_pages import as_code_pages
+from .utils.wbxml import wbxml_parser
+from .utils.wapxml import wapxmltree, wapxmlnode
+from .client.storage import storage
 
-from client.FolderSync import FolderSync
-from client.Sync import Sync
-from client.GetItemEstimate import GetItemEstimate
-from client.Ping import Ping
-from client.Provision import Provision
-from client.ValidateCert import ValidateCert
+from .client.FolderSync import FolderSync
+from .client.Sync import Sync
+from .client.GetItemEstimate import GetItemEstimate
+from .client.Ping import Ping
+from .client.Provision import Provision
+from .client.ValidateCert import ValidateCert
 
-from objects.MSASHTTP import ASHTTPConnector
-from objects.MSASCMD import FolderHierarchy, as_status
-from objects.MSASAIRS import airsync_FilterType, airsync_Conflict, airsync_MIMETruncation, airsync_MIMESupport, \
+from .objects.MSASHTTP import ASHTTPConnector
+from .objects.MSASCMD import FolderHierarchy, as_status
+from .objects.MSASAIRS import airsync_FilterType, airsync_Conflict, airsync_MIMETruncation, airsync_MIMESupport, \
     airsync_Class, airsyncbase_Type
 
 from proto_creds import *  #create a file proto_creds.py with vars: as_server, as_user, as_pass
@@ -66,19 +66,19 @@ if policykey:
 
 
 def as_request(cmd, wapxml_req):
-    print "\r\n%s Request:" % cmd
-    print wapxml_req
+    print("\r\n%s Request:" % cmd)
+    print(wapxml_req)
     res = as_conn.post(cmd, parser.encode(wapxml_req))
     wapxml_res = parser.decode(res)
-    print "\r\n%s Response:" % cmd
-    print wapxml_res
+    print("\r\n%s Response:" % cmd)
+    print(wapxml_res)
     return wapxml_res
 
 
 #Provision functions
 def do_apply_eas_policies(policies):
-    for policy in policies.keys():
-        print "Virtually applying %s = %s" % (policy, policies[policy])
+    for policy in list(policies.keys()):
+        print("Virtually applying %s = %s" % (policy, policies[policy]))
     return True
 
 
@@ -103,12 +103,12 @@ foldersync_xmldoc_req = FolderSync.build(storage.get_synckey("0"))
 foldersync_xmldoc_res = as_request("FolderSync", foldersync_xmldoc_req)
 changes, synckey, status = FolderSync.parse(foldersync_xmldoc_res)
 if int(status) > 138 and int(status) < 145:
-    print as_status("FolderSync", status)
+    print(as_status("FolderSync", status))
     do_provision()
     foldersync_xmldoc_res = as_request("FolderSync", foldersync_xmldoc_req)
     changes, synckey, status = FolderSync.parse(foldersync_xmldoc_res)
     if int(status) > 138 and int(status) < 145:
-        print as_status("FolderSync", status)
+        print(as_status("FolderSync", status))
         raise Exception("Unresolvable provisoning error: %s. Cannot continue..." % status)
 if len(changes) > 0:
     storage.update_folderhierarchy(changes)
@@ -361,16 +361,16 @@ gie_options = {
 #Sync function
 def do_sync(collections):
     as_sync_xmldoc_req = Sync.build(storage.get_synckeys_dict(curs), collections)
-    print "\r\nRequest:"
-    print as_sync_xmldoc_req
+    print("\r\nRequest:")
+    print(as_sync_xmldoc_req)
     res = as_conn.post("Sync", parser.encode(as_sync_xmldoc_req))
-    print "\r\nResponse:"
+    print("\r\nResponse:")
     if res == '':
-        print "Nothing to Sync!"
+        print("Nothing to Sync!")
     else:
         collectionid_to_type_dict = storage.get_serverid_to_type_dict()
         as_sync_xmldoc_res = parser.decode(res)
-        print as_sync_xmldoc_res
+        print(as_sync_xmldoc_res)
         sync_res = Sync.parse(as_sync_xmldoc_res, collectionid_to_type_dict)
         storage.update_items(sync_res)
         return sync_res
@@ -392,14 +392,14 @@ def getitemestimate_check_prime_collections(getitemestimate_responses):
         if response.Status == "1":
             has_synckey.append(response.CollectionId)
         elif response.Status == "2":
-            print "GetItemEstimate Status: Unknown CollectionId (%s) specified. Removing." % response.CollectionId
+            print("GetItemEstimate Status: Unknown CollectionId (%s) specified. Removing." % response.CollectionId)
         elif response.Status == "3":
-            print "GetItemEstimate Status: Sync needs to be primed."
+            print("GetItemEstimate Status: Sync needs to be primed.")
             needs_synckey.update({response.CollectionId: {}})
             has_synckey.append(
                 response.CollectionId)  #technically *will* have synckey after do_sync() need end of function
         else:
-            print as_status("GetItemEstimate", response.Status)
+            print(as_status("GetItemEstimate", response.Status))
     if len(needs_synckey) > 0:
         do_sync(needs_synckey)
     return has_synckey, needs_synckey
@@ -420,17 +420,17 @@ def sync(collections):
             if int(response.Estimate) > 0:
                 collections_to_sync.update({response.CollectionId: collection_sync_params[response.CollectionId]})
         else:
-            print "GetItemEstimate Status (error): %s, CollectionId: %s." % (response.Status, response.CollectionId)
+            print("GetItemEstimate Status (error): %s, CollectionId: %s." % (response.Status, response.CollectionId))
 
     if len(collections_to_sync) > 0:
         sync_res = do_sync(collections_to_sync)
         if sync_res:
             while True:
                 for coll_res in sync_res:
-                    if coll_res.MoreAvailable is None:
+                    if coll_res.MoreAvailable == None:
                         del collections_to_sync[coll_res.CollectionId]
-                if len(collections_to_sync.keys()) > 0:
-                    print collections_to_sync
+                if len(list(collections_to_sync.keys())) > 0:
+                    print(collections_to_sync)
                     sync_res = do_sync(collections_to_sync)
                 else:
                     break

@@ -1,16 +1,16 @@
 ########################################################################
 #  Copyright (C) 2013 Sol Birnbaum
-# 
+#
 #  This program is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
 #  as published by the Free Software Foundation; either version 2
 #  of the License, or (at your option) any later version.
-# 
+#
 #  This program is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
-# 
+#
 #  You should have received a copy of the GNU General Public License
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
@@ -51,7 +51,7 @@ class Sync:
                 xml_as_SyncKey_node = wapxmlnode("SyncKey", xml_as_Collection_node, synckeys[collection_id])    #http://msdn.microsoft.com/en-us/library/gg663426(v=exchg.80).aspx
             except KeyError:
                 xml_as_SyncKey_node = wapxmlnode("SyncKey", xml_as_Collection_node, "0")
-                
+
             xml_as_CollectionId_node = wapxmlnode("CollectionId", xml_as_Collection_node, collection_id) #http://msdn.microsoft.com/en-us/library/gg650886(v=exchg.80).aspx
 
             for parameter in collections[collection_id].keys():
@@ -114,11 +114,11 @@ class Sync:
                 return parse_task(item), content_class
             elif content_class == "Notes":
                 return parse_note(item), content_class
-        except Exception, e:
+        except Exception as e:
             if collectionid_to_type_dict:
                 return Sync.parse_item(item, collection_id, None)
             else:
-                print e
+                print(e)
                 pass
         raise LookupError("Could not determine content class of item for parsing. \r\n------\r\nItem:\r\n%s" % repr(item))
 
@@ -139,11 +139,11 @@ class Sync:
             raise AttributeError("%s response does not conform to any known %s responses." % (root_tag, root_tag))
         if airsyncbase_sync_children[0].tag == "Status":
             if airsyncbase_sync_children[0].text == "4":
-                print "Sync Status: 4, Protocol Error."
+                print("Sync Status: 4, Protocol Error.")
         if airsyncbase_sync_children[0].tag != "Collections":
             raise AttributeError("%s response does not conform to any known %s responses." % (root_tag, root_tag))
 
-        response = []            
+        response = []
 
         airsyncbase_sync_collections_children = airsyncbase_sync_children[0].get_children()
         airsyncbase_sync_collections_children_count = len(airsyncbase_sync_collections_children)
@@ -185,7 +185,7 @@ class Sync:
                             new_collection.Commands.append(("SoftDelete", airsyncbase_sync_commands_children[commands_counter].get_children()[0].text))
                         commands_counter+=1
                 elif airsyncbase_sync_collection_children[collection_counter].tag == "Responses":
-                    print airsyncbase_sync_collection_children[collection_counter]
+                    print(airsyncbase_sync_collection_children[collection_counter])
                 collection_counter+=1
             response.append(new_collection)
             collections_counter+=1

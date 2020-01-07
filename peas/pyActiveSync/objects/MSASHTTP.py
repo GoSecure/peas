@@ -1,23 +1,24 @@
 ########################################################################
 #  Copyright (C) 2013 Sol Birnbaum
-# 
+#
 #  This program is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
 #  as published by the Free Software Foundation; either version 2
 #  of the License, or (at your option) any later version.
-# 
+#
 #  This program is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
-# 
+#
 #  You should have received a copy of the GNU General Public License
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #  MA  02110-1301, USA.
 ########################################################################
 
-import httplib, urllib
+import urllib
+import http.client
 
 class ASHTTPConnector(object):
     """ActiveSync HTTP object"""
@@ -26,7 +27,7 @@ class ASHTTPConnector(object):
     POST_GETATTACHMENT_URL_TEMPLATE = "/Microsoft-Server-ActiveSync?Cmd=%s&AttachmentName=%s&User=%s&DeviceId=123456&DeviceType=Python"
 
     def __init__(self, server, port=443, ssl=True):
-        
+
         self.server = server
         self.port = port
         self.ssl = ssl
@@ -42,15 +43,16 @@ class ASHTTPConnector(object):
     def set_credential(self, username, password):
         import base64
         self.username = username
-        self.credential = base64.b64encode(username+":"+password)
-        self.headers.update({"Authorization" : "Basic " + self.credential})
+        creds_bytes = (username+":"+password).encode()
+        self.credential = base64.b64encode(creds_bytes)
+        self.headers.update({"Authorization" : "Basic " + self.credential.decode()})
 
     def do_post(self, url, body, headers, redirected=False):
         if self.ssl:
-            conn = httplib.HTTPSConnection(self.server, self.port)
+            conn = http.client.HTTPSConnection(self.server, self.port)
             conn.request("POST", url, body, headers)
         else:
-            conn = httplib.HTTPConnection(self.server, self.port)
+            conn = http.client.HTTPConnection(self.server, self.port)
             conn.request("POST", url, body, headers)
         res = conn.getresponse()
         if res.status == 451:
@@ -100,23 +102,22 @@ class ASHTTPConnector(object):
         return res.read(), res.status, content_type
 
     def get_options(self):
-        conn = httplib.HTTPSConnection(self.server, self.port)
+        conn = http.client.HTTPSConnection(self.server, self.port)
         conn.request("OPTIONS", "/Microsoft-Server-ActiveSync", None, self.headers)
         res = conn.getresponse()
         return res
 
     def options(self):
         res = self.get_options()
-        if res.status is 200:
+        if res.status == 200:
             self._server_protocol_versions = res.getheader("ms-asprotocolversions")
             self._server_protocol_commands = res.getheader("ms-asprotocolcommands")
             self._server_version = res.getheader("ms-server-activesync")
             return True
         else:
-            print "Connection Error!:"
-            print res.status, res.reason
+            print("Connection Error!:\n {} {}".format(res.status, res.reason))
             for header in res.getheaders():
-                print header[0]+":",header[1]
+                print(header[0] + ":" + header[1])
             return False
 
     def get_policykey(self):

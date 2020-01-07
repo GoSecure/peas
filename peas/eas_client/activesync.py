@@ -4,16 +4,22 @@ from twisted.python.failure import Failure
 from twisted.web.client import Agent
 from twisted.web.http_headers import Headers
 from xml.dom.minidom import getDOMImplementation
-import base64, urlparse, StringIO, uuid, sys
-from urllib import urlencode
-from dewbxml import wbxmlparser, wbxmlreader, wbxmldocument, wbxmlelement, wbxmlstring
-from activesync_producers import WBXMLProducer, FolderSyncProducer, SyncProducer, ProvisionProducer, ItemOperationsProducer
+
+import io
+import sys
+import uuid
+import base64
+from urllib.parse import urlparse
+from urllib.parse import urlencode
+
+from .dewbxml import wbxmlparser, wbxmlreader, wbxmldocument, wbxmlelement, wbxmlstring
+from .activesync_producers import WBXMLProducer, FolderSyncProducer, SyncProducer, ProvisionProducer, ItemOperationsProducer
 
 version = "1.0"
 
 class DataReader(wbxmlreader):
     def __init__(self, data):
-        self._wbxmlreader__bytes = StringIO.StringIO(data)
+        self._wbxmlreader__bytes = io.StringIO(data)
 
 def convert_wbelem_to_dict(wbe):
     if isinstance(wbe, wbxmlelement):
@@ -52,7 +58,9 @@ class WBXMLHandler(protocol.Protocol):
     def dataReceived(self, data):
         self.d += data
     def connectionLost(self, reason):
-        if self.verbose: print "FINISHED LOADING"#, self.d.encode("hex")
+        if self.verbose:
+            print("FINISHED LOADING")#, self.d.encode("hex")
+
         if not len(self.d):
             # this is valid from sync command
             self.deferred.callback(None)
@@ -60,7 +68,9 @@ class WBXMLHandler(protocol.Protocol):
         wb = wbxmlparser()
         doc = wb.parse(DataReader(self.d))
         res_dict = convert_wbelem_to_dict(doc.root)
-        if self.verbose: print "Result:",res_dict
+        if self.verbose:
+            print("Result: {}".format(res_dict))
+
         if "Status" in res_dict.values()[0]:
             err_status = int(res_dict.values()[0]["Status"])
             if err_status != 1:
@@ -99,7 +109,9 @@ class ActiveSync(object):
     # Response processing
 
     def activesync_error(self, err):
-        if self.verbose: print "ERROR",err
+        if self.verbose:
+            print("ERROR: {}".format(err))
+
         return Failure(exc_value=err, exc_type="ActiveSync")
     def options_response(self, resp):
         if resp.code != 200:
@@ -123,10 +135,10 @@ class ActiveSync(object):
     def process_sync(self, resp, collection_id):
         if not resp:
             return self.collection_data[collection_id]["data"]
-            
+
         sync_key = resp["Sync"]["Collections"]["Collection"]["SyncKey"]
         collection_id = resp["Sync"]["Collections"]["Collection"]["CollectionId"]
-        
+
         assert collection_id != None
         if collection_id not in self.collection_data: # initial sync
             self.collection_data[collection_id] = {"key":sync_key}
@@ -142,7 +154,8 @@ class ActiveSync(object):
 
                     for command, cmdinfo in commands.iteritems():
                         if self.verbose:
-                            print "PROCESS COMMAND:", command, cmdinfo
+                            print("PROCESS COMMAND: {} {}".format(command, cmdinfo))
+
                         if command == 'Add':
                             server_id = cmdinfo['ServerId']
                             self.collection_data[collection_id]['data'][server_id] = cmdinfo
@@ -151,18 +164,20 @@ class ActiveSync(object):
                     # This seems to assume "commands" is a list but it was a dict when tested.
                     for command in resp["Sync"]["Collections"]["Collection"]["Commands"]:
                         if self.verbose:
-                            print "PROCESS COMMAND",command
-                            print "all commands:", resp["Sync"]["Collections"]["Collection"]["Commands"]
+                            print("PROCESS COMMAND: {}".format(command))
+                            print("all commands: {}".format(resp["Sync"]["Collections"]["Collection"]["Commands"]))
                         if "Add" in command:
                             try:
                                 server_id = command["Add"]["ServerId"]
                             except:
-                                print "ERROR: Unexpected add format:",command["Add"]
+                                print("ERROR: Unexpected add format: {}".format(command["Add"]))
                                 continue
                             self.collection_data[collection_id]["data"][server_id] = command["Add"]
-        
+
         if "MoreAvailable" in resp["Sync"]["Collections"]["Collection"]:
-            if self.verbose: print "MORE AVAILABLE, syncing again"
+            if self.verbose:
+                print("MORE AVAILABLE, syncing again")
+
             return self.sync(collection_id, sync_key)
 
         return self.collection_data[collection_id]["data"]
@@ -178,7 +193,9 @@ class ActiveSync(object):
         return self.folder_data["folders"]
 
     def acknowledge_result(self, policyKey):
-        if self.verbose: print "FINAL POLICY KEY",policyKey
+        if self.verbose:
+            print("FINAL POLICY KEY: {}".format(policyKey))
+
         self.policy_key = policyKey
         return True
     def process_policy_key(self, resp):
@@ -206,7 +223,9 @@ class ActiveSync(object):
     # Request queueing
 
     def queue_full(self, next_request):
-        if self.verbose: print "Queue full",next_request
+        if self.verbose:
+            print("Queue full: {}".format(next_request))
+
         method = next_request[0]
         retd = next_request[-1]
         args = next_request[1:-2]
@@ -216,19 +235,25 @@ class ActiveSync(object):
         d.addErrback(self.request_failed, retd)
 
     def request_finished(self, obj, return_deferred):
-        if self.verbose: print "Request finished, resetting queue",obj,return_deferred
+        if self.verbose:
+            print("Request finished, resetting queue {} {}".format(obj, return_deferred))
+
         self.queue_deferred = self.operation_queue.get()
         self.queue_deferred.addCallback(self.queue_full)
         return_deferred.callback(obj)
 
     def request_failed(self, failure, return_deferred):
-        if self.verbose: print "Request failed, resetting queue",failure,return_deferred
+        if self.verbose:
+            print("Request failed, resetting queue {}".format(failure, return_deferred))
+
         self.queue_deferred = self.operation_queue.get()
         self.queue_deferred.addCallback(self.queue_full)
         return_deferred.errback(failure)
 
     def add_operation(self, *operation_method_and_args, **kwargs):
-        if self.verbose: print "Add operation",operation_method_and_args
+        if self.verbose:
+            print("Add operation: {}", operation_method_and_args)
+
         ret_d = defer.Deferred()
         self.operation_queue.put(operation_method_and_args+(kwargs,ret_d,))
         return ret_d
@@ -236,11 +261,13 @@ class ActiveSync(object):
     # Supported Requests
 
     def get_options(self):
-        if self.verbose: print "Options, get URL:",self.get_url(),"Authorization",self.authorization_header()
+        if self.verbose:
+            print("Options, get URL: {} {} {}".format(self.get_url(), "Authorization" ,self.authorization_header()))
+
         d = self.agent.request(
             'OPTIONS',
             self.get_url(),
-            Headers({'User-Agent': ['python-EAS-Client %s'%version], 'Authorization': [self.authorization_header()]}),
+            Headers({'User-Agent': ['python-EAS-Client {}'.format(version)], 'Authorization': [self.authorization_header()]}),
             None)
         d.addCallback(self.options_response)
         d.addErrback(self.activesync_error)
@@ -252,7 +279,7 @@ class ActiveSync(object):
         d = self.agent.request(
             'POST',
             prov_url,
-            Headers({'User-Agent': ['python-EAS-Client %s'%version], 
+            Headers({'User-Agent': ['python-EAS-Client {}'.format(version)],
                         'Authorization': [self.authorization_header()],
                         'MS-ASProtocolVersion': [self.server_version],
                         'X-MS-PolicyKey': [str(self.policy_key)],
@@ -262,14 +289,14 @@ class ActiveSync(object):
         d.addCallback(self.process_policy_key)
         d.addCallback(self.acknowledge_result)
         d.addErrback(self.activesync_error)
-        return d    
+        return d
 
     def provision(self):
         prov_url = self.add_parameters(self.get_url(), {"Cmd":"Provision", "User":self.username, "DeviceId":self.device_id, "DeviceType":self.device_type})
         d = self.agent.request(
             'POST',
             prov_url,
-            Headers({'User-Agent': ['python-EAS-Client %s'%version], 
+            Headers({'User-Agent': ['python-EAS-Client {}'.format(version)],
                         'Authorization': [self.authorization_header()],
                         'MS-ASProtocolVersion': [self.server_version],
                         'X-MS-PolicyKey': [str(self.policy_key)],
@@ -279,7 +306,7 @@ class ActiveSync(object):
         d.addCallback(self.process_policy_key)
         d.addCallback(self.acknowledge)
         d.addErrback(self.activesync_error)
-        return d    
+        return d
 
     def folder_sync(self, sync_key=0):
         if sync_key == 0 and "key" in self.folder_data:
@@ -288,7 +315,7 @@ class ActiveSync(object):
         d = self.agent.request(
             'POST',
             sync_url,
-            Headers({'User-Agent': ['python-EAS-Client %s'%version], 
+            Headers({'User-Agent': ['python-EAS-Client {}'.format(version)],
                         'Authorization': [self.authorization_header()],
                         'MS-ASProtocolVersion': [self.server_version],
                         'X-MS-PolicyKey': [str(self.policy_key)],
@@ -307,7 +334,7 @@ class ActiveSync(object):
         d = self.agent.request(
             'POST',
             sync_url,
-            Headers({'User-Agent': ['python-EAS-Client %s'%version], 
+            Headers({'User-Agent': ['python-EAS-Client {}'.format(version)],
                         'Authorization': [self.authorization_header()],
                         'MS-ASProtocolVersion': [self.server_version],
                         'X-MS-PolicyKey': [str(self.policy_key)],
@@ -323,7 +350,7 @@ class ActiveSync(object):
         d = self.agent.request(
             'POST',
             fetch_url,
-            Headers({'User-Agent': ['python-EAS-Client %s'%version], 
+            Headers({'User-Agent': ['python-EAS-Client {}'.format(version)],
                         'Authorization': [self.authorization_header()],
                         'MS-ASProtocolVersion': [self.server_version],
                         'X-MS-PolicyKey': [str(self.policy_key)],
@@ -339,7 +366,7 @@ class ActiveSync(object):
         d = self.agent.request(
             'POST',
             fetch_url,
-            Headers({'User-Agent': ['python-EAS-Client %s'%version], 
+            Headers({'User-Agent': ['python-EAS-Client {}'.format(version)],
                         'Authorization': [self.authorization_header()],
                         'MS-ASProtocolVersion': [self.server_version],
                         'X-MS-PolicyKey': [str(self.policy_key)],

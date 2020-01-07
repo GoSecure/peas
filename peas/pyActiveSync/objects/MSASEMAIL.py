@@ -1,16 +1,16 @@
 ########################################################################
 #  Copyright (C) 2013 Sol Birnbaum
-# 
+#
 #  This program is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
 #  as published by the Free Software Foundation; either version 2
 #  of the License, or (at your option) any later version.
-# 
+#
 #  This program is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
-# 
+#
 #  You should have received a copy of the GNU General Public License
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
@@ -19,7 +19,7 @@
 
 """[MS-ASEMAIL] Email class namespace objects"""
 
-from MSASAIRS import airsyncbase_Type, airsyncbase_Body, airsyncbase_Attachment, airsyncbase_Attachments, airsyncbase_Method, airsyncbase_NativeBodyType, airsyncbase_BodyPart
+from .MSASAIRS import airsyncbase_Type, airsyncbase_Body, airsyncbase_Attachment, airsyncbase_Attachments, airsyncbase_Method, airsyncbase_NativeBodyType, airsyncbase_BodyPart
 
 class email_Importance:
     Low =    0
@@ -72,7 +72,7 @@ class email2_CalendarType:                 #http://msdn.microsoft.com/en-us/libr
     Default =                       0
     Gregorian =                     1
     Gregorian_US =                  2
-    Japan =                         3 
+    Japan =                         3
     Tiawan =                        4
     Korea =                         5
     Hijri =                         6
@@ -107,7 +107,7 @@ class email2_FirstDayOfWeek:
 class email_Sensitivity:
     Normal =        0
     Personal =      1
-    Private =       2 
+    Private =       2
     Confidential =  3
 
 class email_BusyStatus:
@@ -243,7 +243,7 @@ class Email(object):
         self.email_From = ""              #String
         self.email_Subject = ""           #String
         self.email_ReplyTo = ""           #String. Specifies the e-mail address to which replies will be addressed by default.
-        self.email_DateReceived = None    #dataTime. 
+        self.email_DateReceived = None    #dataTime.
         self.email_DisplayTo = []         #String. List of display names of recipient seperated by semi-colons.
         self.email_ThreadTopic = ""       #String
         self.email_Importance = 1         #Byte. See "MSASEMAIL.Importance"
@@ -253,7 +253,7 @@ class Email(object):
         self.email_MessageClass = email_MessageClass.IPM_Note #String. See "MSASEMAIL.MessageClass" enum.
         self.email_InternetCPID = ""      #Required. String. Original MIME language code page ID.
         self.email_Flag = None            #Optional. email_Flag object.
-        self.airsyncbase_NativeBodyType = airsyncbase_NativeBodyType.HTML #Optional. Byte enum. BodyType stored on server before any modification during transport. 
+        self.airsyncbase_NativeBodyType = airsyncbase_NativeBodyType.HTML #Optional. Byte enum. BodyType stored on server before any modification during transport.
         self.email_ContentClass = ""            #Optional. String. The content class of the data.
         self.email2_UmCalledId = ""             #Optional. Server to client. See http://msdn.microsoft.com/en-us/library/ee200631(v=exchg.80).aspx for when required.
         self.email2_UmUserNotes = ""            #Optional. Server to client. See http://msdn.microsoft.com/en-us/library/ee158056(v=exchg.80).aspx for when required.
@@ -338,7 +338,7 @@ class Email(object):
                 self.email2_AccountId = element.text
             elif element.tag == "rm:RightsManagementLicense":
                 continue
-      
+
 def parse_email(data, type=1):
     email_dict = {}
     if type == 1:

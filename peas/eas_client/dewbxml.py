@@ -476,7 +476,7 @@ class wbxmldocument(object):
             if enc == self.schema:
                 enc_token = token
                 break
-        
+
         chars_token = 0
         for (token,enc) in _charsets.iteritems():
             if enc == self.encoding:
@@ -676,7 +676,7 @@ class wbxmlparser(object):
         '''
         self.__applications = dict(_applications)
         self.__applications.update(applications)
-        
+
         self.__charsets = dict(_charsets)
         self.__charsets.update(charsets)
 
@@ -725,7 +725,7 @@ class wbxmlparser(object):
         token = data.read()
         minor = 0b1111 & token
         major = (token >> 4) + 1
-        doc.version = `major` + '.' + `minor`
+        doc.version = major + '.' + minor
 
     def __publicid(self, data, doc):
         r'''Sets the schema attribute of a WBXML DOM document object. Also sets
@@ -834,9 +834,9 @@ def dialog():
     import tkFileDialog
     root = Tk()
     root.withdraw()
-    
+
     from sys import stdin, stdout
-    
+
     stdout.write('Path to the input WBXML file: ')
 
     binary = tkFileDialog.askopenfilename(
@@ -865,13 +865,13 @@ def dialog():
         return
 
     stdout.write(plain + '\n\n')
-    
+
     root.quit()
-    
+
     stdout.write('Decoding WBXML file... ')
 
     parse(binary, plain)
-    
+
     stdout.write('Done.')
     stdin.read()
 

@@ -1,11 +1,13 @@
 from twisted.internet.defer import succeed
 from twisted.web.iweb import IBodyProducer
-from zope.interface import implements
-from dewbxml import wbxmlparser, wbxmlreader, wbxmldocument, wbxmlelement, wbxmlstring
+from zope.interface import implementer
+
 import struct
 
+from .dewbxml import wbxmlparser, wbxmlreader, wbxmldocument, wbxmlelement, wbxmlstring
+
 class WBXMLProducer(object):
-	implements(IBodyProducer)
+	implementer(IBodyProducer)
 	def __init__(self, wbdoc, verbose=False):
 		self.verbose=verbose
 		self.wb = wbdoc
@@ -28,9 +30,9 @@ def convert_array_to_children(in_elem, in_val):
 			in_elem.addchild(add_elem)
 			convert_array_to_children(add_elem, v[1])
 	elif isinstance(in_val, dict):
-		print "FOUND OPAQUE THING",in_val
+		print("FOUND OPAQUE THING: {}".format(in_val))
 		in_elem.addchild(wbxmlstring(struct.pack(in_val["fmt"],in_val["val"]), opaque=True))
-		print "OPAQUE PRODUCED",in_elem
+		print("OPAQUE PRODUCED {}".format(in_elem))
 	elif in_val != None:
 		in_elem.addchild(wbxmlstring(in_val))
 
@@ -48,7 +50,7 @@ def convert_dict_to_wbxml(indict, default_page_num=None):
 	wb.addchild(root)
 	convert_array_to_children(root, indict.values()[0])
 	return wb
-		
+
 class FolderSyncProducer(WBXMLProducer):
 	def __init__(self, sync_key, verbose=False):
 		wb = convert_dict_to_wbxml({
@@ -89,7 +91,7 @@ class ItemOperationsProducer(WBXMLProducer):
 					("Store", str(store)),
 					("LinkId", str(sid), 19),
 					("Options",[]),
-				]))				
+				]))
 		wb = convert_dict_to_wbxml(wbdict, default_page_num=20)
 		return WBXMLProducer.__init__(self, wb, verbose=verbose)
 
@@ -135,7 +137,7 @@ class ProvisionProducer(WBXMLProducer):
 		if policyKey != None:
 			wbdict["Provision"][0][1][0][1].append(("PolicyKey",str(policyKey)))
 			wbdict["Provision"][0][1][0][1].append(("Status","1"))
-		
+
 		wb = convert_dict_to_wbxml(wbdict, default_page_num=14)
 
 		return WBXMLProducer.__init__(self, wb, verbose=verbose)

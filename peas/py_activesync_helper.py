@@ -1,16 +1,16 @@
 ########################################################################
 # Modified 2016 from code Copyright (C) 2013 Sol Birnbaum
-# 
+#
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
 #  as published by the Free Software Foundation; either version 2
 #  of the License, or (at your option) any later version.
-# 
+#
 #  This program is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
-# 
+#
 #  You should have received a copy of the GNU General Public License
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
@@ -22,20 +22,20 @@ import ssl
 # https://docs.python.org/2/library/xml.html#xml-vulnerabilities
 from lxml import etree as ElementTree
 
-from pyActiveSync.utils.as_code_pages import as_code_pages
-from pyActiveSync.utils.wbxml import wbxml_parser
-from pyActiveSync.client.storage import storage
+from peas.pyActiveSync.utils.as_code_pages import as_code_pages
+from peas.pyActiveSync.utils.wbxml import wbxml_parser
+from peas.pyActiveSync.client.storage import storage
 
-from pyActiveSync.client.FolderSync import FolderSync
-from pyActiveSync.client.Sync import Sync
-from pyActiveSync.client.GetItemEstimate import GetItemEstimate
-from pyActiveSync.client.Provision import Provision
-from pyActiveSync.client.Search import Search
-from pyActiveSync.client.ItemOperations import ItemOperations
+from peas.pyActiveSync.client.FolderSync import FolderSync
+from peas.pyActiveSync.client.Sync import Sync
+from peas.pyActiveSync.client.GetItemEstimate import GetItemEstimate
+from peas.pyActiveSync.client.Provision import Provision
+from peas.pyActiveSync.client.Search import Search
+from peas.pyActiveSync.client.ItemOperations import ItemOperations
 
-from pyActiveSync.objects.MSASHTTP import ASHTTPConnector
-from pyActiveSync.objects.MSASCMD import as_status
-from pyActiveSync.objects.MSASAIRS import airsync_FilterType, airsync_Conflict, airsync_MIMETruncation, \
+from peas.pyActiveSync.objects.MSASHTTP import ASHTTPConnector
+from peas.pyActiveSync.objects.MSASCMD import as_status
+from peas.pyActiveSync.objects.MSASAIRS import airsync_FilterType, airsync_Conflict, airsync_MIMETruncation, \
     airsync_MIMESupport, \
     airsync_Class, airsyncbase_Type
 
@@ -57,19 +57,14 @@ def _parse_for_emails(res, emails):
 
 
 def as_request(as_conn, cmd, wapxml_req):
-    #print "\r\n%s Request:" % cmd
-    #print wapxml_req
     res = as_conn.post(cmd, parser.encode(wapxml_req))
     wapxml_res = parser.decode(res)
-    #print "\r\n%s Response:" % cmd
-    #print wapxml_res
     return wapxml_res
 
 
 #Provision functions
 def do_apply_eas_policies(policies):
     for policy in policies.keys():
-        #print "Virtually applying %s = %s" % (policy, policies[policy])
         pass
     return True
 
@@ -95,17 +90,12 @@ def do_provision(as_conn, device_info):
 def do_sync(as_conn, curs, collections, emails_out):
 
     as_sync_xmldoc_req = Sync.build(storage.get_synckeys_dict(curs), collections)
-    #print "\r\nSync Request:"
-    #print as_sync_xmldoc_req
     res = as_conn.post("Sync", parser.encode(as_sync_xmldoc_req))
-    #print "\r\nSync Response:"
     if res == '':
-        #print "Nothing to Sync!"
         pass
     else:
         collectionid_to_type_dict = storage.get_serverid_to_type_dict()
         as_sync_xmldoc_res = parser.decode(res)
-        #print type(as_sync_xmldoc_res), dir(as_sync_xmldoc_res), as_sync_xmldoc_res
 
         _parse_for_emails(as_sync_xmldoc_res, emails_out)
 
@@ -130,16 +120,13 @@ def getitemestimate_check_prime_collections(as_conn, curs, getitemestimate_respo
         if response.Status == "1":
             has_synckey.append(response.CollectionId)
         elif response.Status == "2":
-            #print "GetItemEstimate Status: Unknown CollectionId (%s) specified. Removing." % response.CollectionId
             pass
         elif response.Status == "3":
-            #print "GetItemEstimate Status: Sync needs to be primed."
             pass
             needs_synckey.update({response.CollectionId: {}})
             has_synckey.append(
                 response.CollectionId)  #technically *will* have synckey after do_sync() need end of function
         else:
-            #print as_status("GetItemEstimate", response.Status)
             pass
     if len(needs_synckey) > 0:
         do_sync(as_conn, curs, needs_synckey, emails_out)
@@ -162,7 +149,6 @@ def sync(as_conn, curs, collections, collection_sync_params, gie_options, emails
             if int(response.Estimate) > 0:
                 collections_to_sync.update({response.CollectionId: collection_sync_params[response.CollectionId]})
         else:
-            #print "GetItemEstimate Status (error): %s, CollectionId: %s." % (response.Status, response.CollectionId)
             pass
 
     if len(collections_to_sync) > 0:
@@ -171,10 +157,9 @@ def sync(as_conn, curs, collections, collection_sync_params, gie_options, emails
         if sync_res:
             while True:
                 for coll_res in sync_res:
-                    if coll_res.MoreAvailable is None:
+                    if coll_res.MoreAvailable == None:
                         del collections_to_sync[coll_res.CollectionId]
                 if len(collections_to_sync.keys()) > 0:
-                    #print "Collections to sync:", collections_to_sync
                     sync_res = do_sync(as_conn, curs, collections_to_sync, emails_out)
                 else:
                     break
@@ -205,13 +190,11 @@ def extract_emails(creds):
     changes, synckey, status = FolderSync.parse(foldersync_xmldoc_res)
     if 138 < int(status) < 145:
         ret = as_status("FolderSync", status)
-        #print ret
         do_provision(as_conn, device_info)
         foldersync_xmldoc_res = as_request(as_conn, "FolderSync", foldersync_xmldoc_req)
         changes, synckey, status = FolderSync.parse(foldersync_xmldoc_res)
         if 138 < int(status) < 145:
             ret = as_status("FolderSync", status)
-            #print ret
             raise Exception("Unresolvable provisioning error: %s. Cannot continue..." % status)
     if len(changes) > 0:
         storage.update_folderhierarchy(changes)
@@ -301,9 +284,9 @@ def get_unc_file(creds, unc_path, username=None, password=None):
 
     # Perform request.
     operation = {'Name': 'Fetch', 'Store': 'DocumentLibrary', 'LinkId': unc_path}
-    if username is not None:
+    if username != None:
         operation['UserName'] = username
-    if password is not None:
+    if password != None:
         operation['Password'] = password
     operations = [operation]
 

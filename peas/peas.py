@@ -3,16 +3,13 @@ __author__ = 'Adam Rutherford'
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
-import py_eas_helper
-import py_activesync_helper
-
+from peas import py_eas_helper
+from peas import py_activesync_helper
 
 PY_ACTIVE_SYNC = 1
 PY_EAS_CLIENT = 2
 
-
 class Peas:
-
     def __init__(self):
         self._backend = PY_ACTIVE_SYNC
 
@@ -141,10 +138,8 @@ def show_banner():
 |_| - Probe ActiveSync
 ''')
 
-
 def main():
     show_banner()
-
 
 if __name__ == '__main__':
     main()

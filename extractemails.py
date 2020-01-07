@@ -12,9 +12,7 @@ from pprint import pprint
 import peas
 import _creds
 
-
 def main():
-
     peas.show_banner()
 
     client = peas.Peas()
@@ -36,7 +34,6 @@ def main():
 
     pprint(emails)
     print
-
 
 if __name__ == '__main__':
     main()

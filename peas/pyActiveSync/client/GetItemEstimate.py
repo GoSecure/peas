@@ -71,10 +71,10 @@ class GetItemEstimate:
 
         for getitemestimate_response_child in getitemestimate_getitemestimate_children:
             response = GetItemEstimate.getitemestimate_response()
-            if getitemestimate_response_child.tag is "Status":
+            if getitemestimate_response_child.tag == "Status":
                 response.Status = getitemestimate_response_child.text
             for element in getitemestimate_response_child:
-                if element.tag is "Status":
+                if element.tag == "Status":
                     response.Status = element.text
                 elif element.tag == "Collection":
                     getitemestimate_collection_children = element.get_children()

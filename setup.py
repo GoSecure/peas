@@ -1,9 +1,9 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from distutils.core import setup
 
 setup(name='PEAS',
-      version='1.0',
+      version='2.0',
       description='ActiveSync Library',
       author='Adam Rutherford',
       author_email='adam.rutherford@mwrinfosecurity.com',

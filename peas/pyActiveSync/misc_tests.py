@@ -1,16 +1,16 @@
 ########################################################################
 #  Copyright (C) 2013 Sol Birnbaum
-# 
+#
 #  This program is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
 #  as published by the Free Software Foundation; either version 2
 #  of the License, or (at your option) any later version.
-# 
+#
 #  This program is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
-# 
+#
 #  You should have received a copy of the GNU General Public License
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
@@ -22,30 +22,30 @@
 import sys, time
 import ssl
 
-from utils.as_code_pages import as_code_pages
-from utils.wbxml import wbxml_parser
-from utils.wapxml import wapxmltree, wapxmlnode
-from client.storage import storage
+from .utils.as_code_pages import as_code_pages
+from .utils.wbxml import wbxml_parser
+from .utils.wapxml import wapxmltree, wapxmlnode
+from .client.storage import storage
 
-from client.FolderSync import FolderSync
-from client.Sync import Sync
-from client.GetItemEstimate import GetItemEstimate
-from client.ResolveRecipients import ResolveRecipients
-from client.FolderCreate import FolderCreate
-from client.FolderUpdate import FolderUpdate
-from client.FolderDelete import FolderDelete
-from client.Ping import Ping
-from client.MoveItems import MoveItems
-from client.Provision import Provision
-from client.ItemOperations import ItemOperations
-from client.ValidateCert import ValidateCert
-from client.SendMail import SendMail
-from client.SmartForward import SmartForward
-from client.SmartReply import SmartReply
+from .client.FolderSync import FolderSync
+from .client.Sync import Sync
+from .client.GetItemEstimate import GetItemEstimate
+from .client.ResolveRecipients import ResolveRecipients
+from .client.FolderCreate import FolderCreate
+from .client.FolderUpdate import FolderUpdate
+from .client.FolderDelete import FolderDelete
+from .client.Ping import Ping
+from .client.MoveItems import MoveItems
+from .client.Provision import Provision
+from .client.ItemOperations import ItemOperations
+from .client.ValidateCert import ValidateCert
+from .client.SendMail import SendMail
+from .client.SmartForward import SmartForward
+from .client.SmartReply import SmartReply
 
-from objects.MSASHTTP import ASHTTPConnector
-from objects.MSASCMD import FolderHierarchy, as_status
-from objects.MSASAIRS import airsync_FilterType, airsync_Conflict, airsync_MIMETruncation, airsync_MIMESupport, airsync_Class, airsyncbase_Type
+from .objects.MSASHTTP import ASHTTPConnector
+from .objects.MSASCMD import FolderHierarchy, as_status
+from .objects.MSASAIRS import airsync_FilterType, airsync_Conflict, airsync_MIMETruncation, airsync_MIMESupport, airsync_Class, airsyncbase_Type
 
 from proto_creds import * #create a file proto_creds.py with vars: as_server, as_user, as_pass
 
@@ -73,18 +73,18 @@ if policykey:
     as_conn.set_policykey(policykey)
 
 def as_request(cmd, wapxml_req):
-    print "\r\n%s Request:" % cmd
-    print wapxml_req
+    print("\r\n%s Request:" % cmd)
+    print(wapxml_req)
     res = as_conn.post(cmd, parser.encode(wapxml_req))
     wapxml_res = parser.decode(res)
-    print "\r\n%s Response:" % cmd
-    print wapxml_res
+    print("\r\n%s Response:" % cmd)
+    print(wapxml_res)
     return wapxml_res
 
 #Provision functions
 def do_apply_eas_policies(policies):
-    for policy in policies.keys():
-        print "Virtually applying %s = %s" % (policy, policies[policy])
+    for policy in list(policies.keys()):
+        print("Virtually applying %s = %s" % (policy, policies[policy]))
     return True
 
 def do_provision():
@@ -108,12 +108,12 @@ foldersync_xmldoc_req = FolderSync.build(storage.get_synckey("0"))
 foldersync_xmldoc_res = as_request("FolderSync", foldersync_xmldoc_req)
 changes, synckey, status = FolderSync.parse(foldersync_xmldoc_res)
 if int(status) > 138 and int(status) < 145:
-    print as_status("FolderSync", status)
+    print(as_status("FolderSync", status))
     do_provision()
     foldersync_xmldoc_res = as_request("FolderSync", foldersync_xmldoc_req)
     changes, synckey, status = FolderSync.parse(foldersync_xmldoc_res)
     if int(status) > 138 and int(status) < 145:
-        print as_status("FolderSync", status)
+        print(as_status("FolderSync", status))
         raise Exception("Unresolvable provisoning error: %s. Cannot continue..." % status)
 if len(changes) > 0:
     storage.update_folderhierarchy(changes)
@@ -123,7 +123,7 @@ if len(changes) > 0:
 #ItemOperations
 itemoperations_params = [{"Name":"Fetch","Store":"Mailbox", "FileReference":"%34%67%32"}]
 itemoperations_xmldoc_req = ItemOperations.build(itemoperations_params)
-print "\r\nItemOperations Request:\r\n", itemoperations_xmldoc_req
+print("\r\nItemOperations Request:\r\n", itemoperations_xmldoc_req)
 #itemoperations_xmldoc_res, attachment_file = as_conn.fetch_multipart(itemoperations_xmldoc_req, "myattachment1.txt")
 #itemoperations_xmldoc_res_parsed = ItemOperations.parse(itemoperations_xmldoc_res)
 #print itemoperations_xmldoc_res
@@ -140,7 +140,7 @@ if foldercreate_res_parsed[0] == "1":
     storage.update_synckey(foldercreate_res_parsed[1], "0", curs)
     conn.commit()
 else:
-    print as_status("FolderCreate", foldercreate_res_parsed[0])
+    print(as_status("FolderCreate", foldercreate_res_parsed[0]))
 
 time.sleep(5)
 
@@ -174,8 +174,8 @@ try:
         storage.delete_folderhierarchy_change(delete_folder, curs)
         storage.update_synckey(folderdelete_res_parsed[1], "0", curs)
         conn.commit()
-except TypeError, e:
-    print "\r\n%s\r\n" % e
+except TypeError as e:
+    print("\r\n%s\r\n" % e)
     pass
 
 #ResolveRecipients
@@ -193,15 +193,15 @@ my_email["From"] = as_user
 my_email["To"] = as_user
 
 sendmail_xmldoc_req = SendMail.build(email_mid, my_email)
-print "\r\nRequest:"
-print sendmail_xmldoc_req
+print("\r\nRequest:")
+print(sendmail_xmldoc_req)
 res = as_conn.post("SendMail", parser.encode(sendmail_xmldoc_req))
-print "\r\nResponse:"
+print("\r\nResponse:")
 if res == '':
-    print "\r\nTest message sent successfully!"
+    print("\r\nTest message sent successfully!")
 else:
     sendmail_xmldoc_res = parser.decode(res)
-    print sendmail_xmldoc_res
+    print(sendmail_xmldoc_res)
     sendmail_res = SendMail.parse(sendmail_xmldoc_res)
 
 ##MoveItems

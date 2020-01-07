@@ -1,16 +1,16 @@
 ########################################################################
 #  Copyright (C) 2013 Sol Birnbaum
-# 
+#
 #  This program is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
 #  as published by the Free Software Foundation; either version 2
 #  of the License, or (at your option) any later version.
-# 
+#
 #  This program is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
-# 
+#
 #  You should have received a copy of the GNU General Public License
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
@@ -52,10 +52,10 @@ class FolderCreate:
         folderhierarchy_foldercreate_serverid = None
 
         for element in folderhierarchy_foldercreate_children:
-            if element.tag is "Status":
+            if element.tag == "Status":
                 folderhierarchy_foldercreate_status = element.text
                 if folderhierarchy_foldercreate_status != "1":
-                     print "FolderCreate Exception: %s" % folderhierarchy_foldercreate_status
+                     print("FolderCreate Exception: {}".format(folderhierarchy_foldercreate_status))
             elif element.tag == "SyncKey":
                 folderhierarchy_foldercreate_synckey = element.text
             elif element.tag == "ServerId":

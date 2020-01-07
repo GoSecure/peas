@@ -1,22 +1,21 @@
 ########################################################################
 #  Modified 2016 from code copyright (C) 2013 Sol Birnbaum
-# 
+#
 #  This program is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
 #  as published by the Free Software Foundation; either version 2
 #  of the License, or (at your option) any later version.
-# 
+#
 #  This program is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
-# 
+#
 #  You should have received a copy of the GNU General Public License
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #  MA  02110-1301, USA.
 ########################################################################
-
 
 class wapxmltree(object):
     def __init__(self, inwapxmlstr=None):
@@ -49,8 +48,8 @@ class wapxmlnode(object):
         if parent:
             try:
                 self.set_parent(parent)
-            except Exception, e:
-                print e
+            except Exception as e:
+                print(e)
     def set_parent(self, parent):
         parent.add_child(self)
         self._parent = parent
@@ -117,8 +116,3 @@ class wapxmlnode(object):
                 yield child
     def __str__(self):
         return self.__repr__()
-                    
-
-
-
-

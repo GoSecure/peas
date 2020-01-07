@@ -62,7 +62,7 @@ class SmartForward:
         status = None
 
         for element in smartforward_children:
-            if element.tag is "Status":
+            if element.tag == "Status":
                 status = element.text
         return status
 
